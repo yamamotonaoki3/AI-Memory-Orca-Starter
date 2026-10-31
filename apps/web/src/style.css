@@ -1,0 +1,14 @@
+:root {
+  font-family: system-ui, "Yu Gothic", "Meiryo", sans-serif;
+  color: #172335;
+  background: #f5f7fb;
+  font-synthesis: none;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+.page { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
+.panel { width: min(100%, 680px); background: #fff; padding: 36px; border-radius: 18px; box-shadow: 0 12px 40px #17233512; }
+.eyebrow { color: #526789; font-weight: 700; letter-spacing: .12em; }
+h1 { font-size: clamp(1.5rem, 3vw, 2.25rem); }
+.status { display: flex; gap: 8px; padding: 16px; background: #edf4ff; border-radius: 10px; }
+.warning { padding-top: 16px; color: #8e4b15; font-weight: 600; }
