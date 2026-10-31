@@ -1,0 +1,8 @@
+:root {
+  font-family: system-ui, "Yu Gothic", "Meiryo", sans-serif;
+  color: #172335;
+  background: #f5f7fb;
+  font-synthesis: none;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }

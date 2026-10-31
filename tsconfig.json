@@ -20,8 +20,10 @@
     ]
   },
   "include": [
-    "apps/**/*.ts",
-    "apps/**/*.tsx",
+    "backend/**/*.ts",
+    "frontend/**/*.ts",
+    "worker/**/*.ts",
+    "frontend/**/*.tsx",
     "packages/**/*.ts",
     "docs/database/schema.ts",
     "drizzle.config.ts"
