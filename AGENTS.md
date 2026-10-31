@@ -13,7 +13,7 @@
 
 ## 開発環境・Git
 
-- GitHubはPrivate。GitHub Actionsは軽い合成テストに限定。個人データや本番DBをCIへ送らない。
+- GitHubはPublic/MIT。GitHub Actionsは軽い合成テストに限定。個人データや本番DBをCIへ送らない。公開履歴とActionsログに機密情報を残さない。
 - Orcaのworktreeで作業し、`main`を安定版とする。変更は`feature/*`などの独立ブランチで実施。
 - 変更ごとに対象を絞ったテストを追加。失敗を隠さず報告する。
 - `docs/database/` はv0.1設計案。型チェックや移行実行が済んでいない前提で扱う。
@@ -21,6 +21,7 @@
 
 ## 禁止
 
+- 外部PR・Issueに貼り付ける内容も公開されるため、実原本や認証・環境情報を貼らない。
 - `.env*`、`auth.json`、`.claude/`、`.codex/`、秘密鍵、原本、音声、SQLite本番DB、バックアップをGitへコミットしない。
 - 実際の秘密値で自動テストを行わない。
 - 本番原本に対し、自動クリーニング、上書き、CASCADE DELETE、強制初期化をしない。
