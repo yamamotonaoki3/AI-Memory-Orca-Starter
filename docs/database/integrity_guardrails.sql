@@ -1,13 +1,13 @@
--- REVIEWED MANUAL MIGRATION: must be applied after schema.ts core tables exist.
--- Originals / human revisions are immutable metadata + bytes; intentional deletion
--- uses a separate explicitly approved purge workflow retaining tombstones.
+-- 手動レビューが必要なマイグレーション。schema.tsの基本テーブル作成後に適用する。
+-- 原本と人間による訂正履歴は、内容とメタデータを原則として変更・削除しない。
+-- 例外的な削除には、削除記録を保持する別の承認済み手順を使用する。
 CREATE TRIGGER original_versions_no_update_identity
 BEFORE UPDATE OF record_id, version_no, original_file_name, media_type, encoding_hint,
                  storage_rel_path, sha256, byte_length ON original_versions
 BEGIN SELECT RAISE(ABORT, 'original version content metadata is immutable'); END;
 
--- Existing original bytes may never change. Status can change only through reviewed
--- storage/recovery flows; a non-COMMITTED source must never remain searchable.
+-- 原本のバイト列は変更しない。状態変更は審査済みの保存・復旧処理だけで行う。
+-- 保存が確定していない原本を検索できる状態に残さない。
 CREATE TRIGGER original_source_retract_on_status_change
 AFTER UPDATE OF status ON original_versions
 WHEN NEW.status <> 'COMMITTED'
@@ -48,8 +48,8 @@ CREATE TRIGGER tombstones_no_delete
 BEFORE DELETE ON record_tombstones
 BEGIN SELECT RAISE(ABORT, 'tombstones must not be deleted'); END;
 
--- A scan must refer to one source that belongs to the same record.
--- The Drizzle schema CHECK guarantees exactly one non-null source.
+-- 機密検査の対象は、同じ記録に属する原本または訂正履歴に限定する。
+-- 参照先が必ず一方だけになることは、Drizzleで定義したCHECK制約でも検証する。
 CREATE TRIGGER security_scan_source_record_insert
 BEFORE INSERT ON security_scans
 WHEN (NEW.original_version_id IS NOT NULL AND NOT EXISTS (
@@ -59,17 +59,16 @@ WHEN (NEW.original_version_id IS NOT NULL AND NOT EXISTS (
 ))
 BEGIN SELECT RAISE(ABORT, 'scan source must belong to the same record'); END;
 
--- Never rebind an existing scan to a different original/revision/rule set.
--- A new scan is required for any change in source or policy.
+-- 実行済みの機密検査を別の原本・訂正履歴・ルールセットへ付け替えない。
+-- 対象や検査ルールが変わる場合は、新しい機密検査を作成する。
 CREATE TRIGGER security_scans_no_rebind
 BEFORE UPDATE OF record_id, original_version_id, text_revision_id, rule_set_id ON security_scans
  BEGIN SELECT RAISE(ABORT, 'scan provenance is immutable'); END;
 
--- Defense-in-depth: search_documents must be a projection of fully reviewed safe text.
--- This M1 policy indexes only PUBLIC/INTERNAL. CONFIDENTIAL may require a separately
--- authorized, segregated search design; RESTRICTED/UNKNOWN are never in normal FTS.
--- A published safe text version must never have its content mutated in place.
--- Revoke and generate a new version instead.
+-- 多層防御として、検索用データは検査・承認済みの安全化テキストからのみ作成する。
+-- M1の通常検索ではPUBLICとINTERNALだけを索引化する。
+-- CONFIDENTIALは別途認可と分離された検索設計が必要。RESTRICTEDとUNKNOWNは対象外とする。
+-- 公開済みの安全化テキストは上書きせず、失効させて新しい版を作成する。
 CREATE TRIGGER safe_text_versions_no_update_content
 BEFORE UPDATE OF scan_id, safe_title, safe_body, sha256 ON safe_text_versions
 BEGIN SELECT RAISE(ABORT, 'safe text content version is immutable'); END;
@@ -110,7 +109,7 @@ BEFORE UPDATE OF record_id, safe_text_version_id, safe_title, safe_body,
                  status, index_generation ON search_documents
 BEGIN SELECT RAISE(ABORT, 'retract then publish, never mutate an indexed document'); END;
 
--- Invalidate indexed projections automatically before/when their authority is revoked.
+-- 承認や公開根拠が失効した際は、対応する検索索引を自動的に撤回する。
 CREATE TRIGGER safe_text_retract_on_status_change
 AFTER UPDATE OF status ON safe_text_versions
 WHEN NEW.status <> 'APPROVED'
@@ -140,6 +139,6 @@ CREATE TRIGGER record_retract_on_tombstone
 AFTER INSERT ON record_tombstones
 BEGIN DELETE FROM search_documents WHERE record_id = NEW.record_id; END;
 
--- IMPORTANT: security policy rollout must first retract stale safe-text publication
--- in a reviewed maintenance transaction. A new policy can be activated only after
--- the old publication has been invalidated and later rescanned.
+-- 重要：機密保護ルールを切り替える前に、旧ルールに基づく検索公開を
+-- レビュー済みの保守トランザクションで撤回する。
+-- 新ルールの有効化は、旧公開の失効と必要な再検査の手順を確認してから行う。
