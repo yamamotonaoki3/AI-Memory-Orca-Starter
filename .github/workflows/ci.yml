@@ -1,4 +1,4 @@
-name: M1設計の簡易テスト
+name: M1開発基盤とSQLiteの検証
 
 on:
   push:
@@ -19,15 +19,36 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: ソースコードのみを取得
+      - name: ソースコードの取得
         uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: SQLiteとPythonのバージョンを確認
-        run: |
-          python3 --version
-          python3 -c 'import sqlite3; print("SQLite:", sqlite3.sqlite_version)'
-      - name: 合成データでM1の簡易テストを実行
+      - name: PythonとSQLiteの確認
         run: python3 docs/database/sqlite_smoke_test.py
-# 重要：実際の原本・本番SQLite・秘密情報・音声はCIへ渡さない。
-# package.jsonとロックファイルの導入後、TypeScript・Drizzleの型チェックを追加する。
+
+  foundation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: ソースコードの取得
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Node.js 24の準備
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: 依存パッケージの導入（初期検証）
+        run: npm install --no-audit --no-fund
+      - name: TypeScriptとDrizzleの型チェック
+        run: npm run typecheck
+      - name: Honoの単体テスト
+        run: npm test
+      - name: React画面のビルド
+        run: npm run build:web
+      - name: DrizzleマイグレーションSQLの生成
+        run: npm run db:generate
+      - name: 空のメモリDBでマイグレーションを検証
+        run: npm run db:verify
+# 実データや秘密情報をGitHub Actionsへ送らない。
+# ロックファイルが確定したら、npm installをnpm ciへ切り替える。
