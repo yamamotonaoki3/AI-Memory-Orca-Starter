@@ -1,31 +1,44 @@
-# M1 Database Design Starter v0.1
+# M1 データベース設計スターター v0.1
 
-Based on long-term AI memory requirements v8.8 (Q1-Q86). **Design draft**; not a production-ready application.
+ローカルAI長期記憶システムの条件定義書 v8.8（Q1〜Q86）に基づく設計案です。
+**現在は設計ドラフトであり、本番運用できる完成済みアプリではありません。**
 
-## Files
+## ファイルの内容
 
-- `DESIGN.md`: Japanese DB design, ER diagram, schema table guide, acceptance checks
-- `er.mmd`: Mermaid ER diagram
-- `schema.ts`: Drizzle SQLite core tables and indexes (27 tables)
-- `drizzle.config.ts`: **development-only** sample Drizzle Kit configuration
-- `fts5_search.sql`: FTS5 trigram virtual table and triggers
-- `integrity_guardrails.sql`: immutable original/human revisions and safety publication guards
-- `sqlite_smoke_test.py`: Python stdlib smoke tests of FTS and trigger guards
+- `DESIGN.md`：日本語のDB設計書。ER図、各テーブルの役割、受け入れ条件を説明します。
+- `er.mmd`：Mermaid形式のER図です。
+- `schema.ts`：SQLite用のDrizzle ORMスキーマ案です。基本テーブル27個とインデックスを定義します。
+- `drizzle.config.ts`：**開発用限定**のDrizzle Kit設定例です。
+- `fts5_search.sql`：FTS5のtrigram方式による検索用仮想テーブルと同期トリガーです。
+- `integrity_guardrails.sql`：原本・人間の訂正履歴を保護し、安全な検索公開を制御するトリガーです。
+- `sqlite_smoke_test.py`：Python標準ライブラリでFTS5と保護トリガーを確認する簡易テストです。
 
-## First verification
+## 最初の動作確認
 
-```bash
-python sqlite_smoke_test.py
+リポジトリのルートディレクトリから実行します。
+
+```powershell
+python .\docs\database\sqlite_smoke_test.py
 ```
 
-Before TypeScript compilation, install and pin `drizzle-orm` and `drizzle-kit` in your application project. These files have **not** been checked against an installed Drizzle package; syntax alone has been parsed with TypeScript.
+このテストでは、**Drizzleの全スキーマや認証機能は検証できません**。
 
-Review the generated migration SQL, then apply in a **new empty dev database**, never to your existing production data. The custom SQL is applied only after the core tables are in place. Do not run `drizzle-kit push` or automatically apply migrations at production server startup.
+TypeScriptの型チェックを行う前に、アプリの依存パッケージとして`drizzle-orm`と`drizzle-kit`のバージョンを固定してください。
+`schema.ts`は現時点でインストール済みのDrizzleとの型互換性を確認できていません。
 
-## Critical limitations before first real data
+マイグレーションSQLを生成したら、内容をレビューしてから**新規の空の開発用DB**に適用してください。
+既存の本番DBへ適用してはいけません。追加の手書きSQLは基本テーブルの作成後に適用します。
+本番環境では`drizzle-kit push`を使用せず、サーバー起動時の自動マイグレーションも行いません。
 
-- WebAuthn authentication, Zod input validation, security scanner, complete state constraints, backup+restore and filesystem journaling are **not implemented** by this package.
-- Do not insert real sensitive records until those components are built and validated.
-- The `search_documents` publish guard is defense-in-depth, not a substitute for application user/project authorization.
-- `integrity_guardrails.sql` blocks deletion of core original/revision metadata; the exceptional permanent-delete workflow requires a reviewed separate service and retained tombstones.
-- Recovery ledger must have an independent trusted copy; merely recording its hash in the same SQLite file cannot prevent rollback.
+## 実際のデータを扱う前の注意事項
+
+- WebAuthn認証、Zodによる入力検証、機密情報の検査、状態制約の完全な検証、バックアップ・復元、ファイル保存のジャーナル処理は**未実装**です。
+- これらが完成して安全性を検証するまでは、個人情報や機密情報を含む実データを投入しないでください。
+- `search_documents`の公開ガードは多層防御の一部です。ユーザー・案件ごとの認可を代替するものではありません。
+- `integrity_guardrails.sql`は原本や訂正履歴の重要メタデータの削除を禁止します。例外的な完全削除には、承認された専用処理と削除記録の保持が必要です。
+- 復旧台帳はSQLiteとは独立した信頼できるコピーを保持してください。同じSQLite内にハッシュを保存するだけでは、古いデータへの巻き戻しを防げません。
+
+## 開発時の参照
+
+詳細な設計・制約は`DESIGN.md`を確認してください。
+現在の実装はM1の検証前段階です。GitHubに登録するデータは合成データのみに限定します。
