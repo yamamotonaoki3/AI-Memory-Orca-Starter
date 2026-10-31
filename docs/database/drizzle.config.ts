@@ -5,5 +5,6 @@ export default defineConfig({
   out: "./drizzle",
   dbCredentials: { url: "./dev-memory.sqlite" },
 });
-// DEVELOPMENT ONLY. Production migrations require human approval,
-// offline backup + isolated restore validation. Do not run push or migrate on server boot.
+// 開発環境専用の設定例。本番DBの変更には利用者の承認が必要。
+// 変更前にオフラインバックアップを取得し、隔離環境で復元を検証する。
+// 本番環境でのdrizzle-kit pushや、サーバー起動時の自動マイグレーションは禁止する。
