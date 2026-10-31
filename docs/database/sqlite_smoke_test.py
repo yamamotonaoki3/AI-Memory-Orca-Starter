@@ -1,6 +1,8 @@
-"""Run with: python sqlite_smoke_test.py (stdlib only).
-Tests only handcrafted minimum core tables + real FTS custom SQL triggers.
-Does NOT validate full Drizzle schema, auth, Windows ACL, or production migrations.
+"""SQLiteの検索公開ガードと改変防止トリガーを検証する簡易テスト。
+
+実行方法: python sqlite_smoke_test.py
+Python標準ライブラリのみを使用し、最小限の模擬テーブルと実際のFTS5用SQLを検証する。
+Drizzleの全スキーマ、認証、Windowsのアクセス権限、本番マイグレーションは検証対象外。
 """
 from pathlib import Path
 import sqlite3
@@ -26,7 +28,7 @@ def blocked(query):
         c.execute(query)
     except sqlite3.DatabaseError:
         return
-    raise AssertionError("A forbidden statement unexpectedly succeeded: " + query)
+    raise AssertionError("禁止するはずのSQLが実行できました: " + query)
 
 c.execute("INSERT INTO records VALUES('r1','ACTIVE')")
 c.execute("INSERT INTO original_versions VALUES('o1','r1',1,'input.txt','text/plain','utf8','2026/10/o1','hash1',10,'COMMITTED')")
@@ -42,7 +44,7 @@ blocked("INSERT INTO search_documents VALUES(2,'r1','safe','原文を漏洩','�
 c.execute("UPDATE security_scans SET classification='RESTRICTED' WHERE id='scan'")
 assert c.execute("SELECT COUNT(*) FROM search_documents_fts WHERE search_documents_fts MATCH ?", ('"日本語"',)).fetchone()[0] == 0
 blocked("INSERT INTO search_documents VALUES(3,'r1','safe','安全なタイトル','日本語の安全な本文','READY',1)")
-# Fail closed: immutable provenance, cross-record injection, staged originals.
+# 機密検査の参照先は変更できず、別の記録の原本や保存未確定の原本も公開できないことを検証する。
 blocked("UPDATE security_scans SET original_version_id='something-else' WHERE id='scan'")
 c.execute("INSERT INTO records VALUES('r2','ACTIVE')")
 c.execute("INSERT INTO original_versions VALUES('o2','r2',1,'other.txt','text/plain','utf8','2026/10/o2','hash2',10,'COMMITTED')")
@@ -51,7 +53,7 @@ c.execute("INSERT INTO original_versions VALUES('staged','r1',2,'input.txt','tex
 c.execute("INSERT INTO security_scans VALUES('scan-staged','r1','staged',NULL,'rules','COMPLETED','PUBLIC')")
 c.execute("INSERT INTO safe_text_versions VALUES('safe-staged','scan-staged','未確定','索引禁止','hash-stage','APPROVED')")
 blocked("INSERT INTO search_documents VALUES(4,'r1','safe-staged','未確定','索引禁止','READY',1)")
-# A confirmed human revision can be published; revoking it removes its FTS row.
+# 人間が確定した訂正履歴のみ公開でき、確定状態の失効時にはFTS索引から削除されることを検証する。
 c.execute("INSERT INTO text_revisions VALUES('rev','r1','o1',NULL,1,'2026/10/rev','hash-rev','user1',1,'HUMAN_CONFIRMED')")
 c.execute("INSERT INTO security_scans VALUES('scan-rev','r1',NULL,'rev','rules','COMPLETED','INTERNAL')")
 c.execute("INSERT INTO safe_text_versions VALUES('safe-rev','scan-rev','確定済み','修正した本文','hash-rev-safe','APPROVED')")
@@ -59,4 +61,4 @@ c.execute("INSERT INTO search_documents VALUES(5,'r1','safe-rev','確定済み',
 assert c.execute("SELECT COUNT(*) FROM search_documents_fts WHERE search_documents_fts MATCH ?", ('"修正した"',)).fetchone()[0] == 1
 c.execute("UPDATE text_revisions SET review_status='SUPERSEDED' WHERE id='rev'")
 assert c.execute("SELECT COUNT(*) FROM search_documents_fts WHERE search_documents_fts MATCH ?", ('"修正した"',)).fetchone()[0] == 0
-print("PASS: FTS authorization, revocation, immutable provenance, staged source denial")
+print("成功: FTSの公開制御・失効時撤回・参照先の不変性・未確定原本の公開禁止")
