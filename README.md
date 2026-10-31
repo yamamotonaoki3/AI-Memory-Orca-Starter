@@ -1,9 +1,19 @@
 # AI-Memory — ローカルAI長期記憶システム
 
-**状況: M1設計ドラフト / 未実装。本番データを投入しないこと。**
+**状況: MVP 1の開発基盤を構築済み。原本保存・認証は未実装のため、実データを投入しないこと。**
 
 Windows 11 + Orca で開発し、GitHub の **Public** リポジトリ（**MIT License**）でソースコード・設計書・合成テストのみを管理するプロジェクトです。
 確定した条件定義書は **v8.8 / Q1〜Q86**。原文・原音声・元文書・全原本版・訂正履歴は**原則無期限保存**です。
+
+## アプリケーションのフォルダ構成
+
+- `frontend/`：React + Viteの画面。`src/styles/`でCSSを共通設定と画面固有に分割。
+- `backend/`：Hono + TypeScriptのAPIと単体テスト。
+- `worker/`：独立した非同期処理の起動口（実処理は未実装）。
+- `packages/db/`：Drizzle ORMのスキーマ共有用エントリーポイント。
+- `docs/development/PROJECT_STRUCTURE.md`：責務・配置ルール・起動手順。
+
+`package.json`は当面リポジトリ直下で共通管理します。既存の`npm run dev:api`と`npm run dev:web`は変更せず利用できます。
 
 ## このリポジトリに含まれるもの
 
@@ -29,7 +39,7 @@ Windows 11 + Orca で開発し、GitHub の **Public** リポジトリ（**MIT L
 python .\docs\database\sqlite_smoke_test.py
 ```
 
-**スモークテストが通ってもDrizzleの型チェック、認証、バックアップ、復旧、Windows実機の品質ゲートは未完了です。**
+**GitHub ActionsでTypeScript・Drizzleの型チェックと合成テストは確認済みですが、認証、原本保存、バックアップ、復旧の安全性は未確認です。**
 
 ## 秘密を守るための区別
 

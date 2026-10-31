@@ -4,12 +4,19 @@
 
 ## 構成
 
-- `apps/api/`：Hono + TypeScriptのローカルAPI（現在はヘルスチェックのみ）。
-- `apps/web/`：Vite + Reactの開発用画面（状態表示のみ）。
-- `apps/worker/`：独立Workerの起動口（ジョブ処理は未実装）。
+- `backend/`：Hono + TypeScriptのローカルAPI（現在はヘルスチェックのみ）。
+- `frontend/`：Vite + Reactの開発用画面（状態表示のみ）。CSSは`frontend/src/styles/`へ分離。
+- `worker/`：独立Workerの起動口（ジョブ処理は未実装）。
 - `packages/db/`：Drizzle ORMスキーマの参照口。
 - `docs/database/schema.ts`：27テーブルの検証前スキーマ案。
 - `scripts/verify-migrations.mjs`：生成SQLを空のメモリDBに適用して整合性を検証。
+
+## ディレクトリ分離
+
+- `frontend/src/styles/global.css`：全画面共通の初期設定・基本スタイル。
+- `frontend/src/styles/app.css`：開発用画面固有のレイアウトと表示スタイル。
+- `backend/`と`frontend/`は独立した責務のフォルダですが、MVP初期段階ではルートの`package.json`で依存関係を管理します。
+- 詳細は`docs/development/PROJECT_STRUCTURE.md`を参照してください。
 
 ## Windowsでの確認
 
