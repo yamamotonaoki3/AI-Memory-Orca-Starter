@@ -1,0 +1,21 @@
+erDiagram
+  users ||--o{ records : owns
+  users ||--o{ webauthn_credentials : registers
+  users ||--o{ recovery_codes : holds
+  users ||--o{ sessions : creates
+  records ||--o{ original_versions : has_immutable_originals
+  records ||--o{ text_revisions : has_human_revisions
+  original_versions ||--o{ text_revisions : grounds
+  records ||--o{ security_scans : scans
+  security_rule_sets ||--o{ security_scans : versioned_rules
+  security_scans ||--o{ safe_text_versions : yields
+  safe_text_versions ||--o| search_documents : publishes
+  records ||--o{ record_project_links : links
+  projects ||--o{ record_project_links : groups
+  records ||--o{ record_taxonomy_links : classified
+  taxonomy_nodes ||--o{ record_taxonomy_links : labels
+  records ||--o{ review_items : human_review
+  records ||--o{ jobs : asynchronous_processing
+  records ||--o| record_tombstones : exceptional_deletion
+  original_versions ||--o{ storage_operations : durable_file_commits
+  records ||--o{ search_documents : indexed_safe_text

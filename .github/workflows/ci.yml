@@ -1,0 +1,33 @@
+name: M1 design smoke tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sqlite-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout source only
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify SQLite and Python
+        run: |
+          python3 --version
+          python3 -c 'import sqlite3; print("SQLite:", sqlite3.sqlite_version)'
+      - name: Run synthetic M1 smoke checks
+        run: python3 docs/database/sqlite_smoke_test.py
+# IMPORTANT: no real originals, SQLite production DB, secrets or audio in CI.
+# TypeScript/Drizzle typecheck will be added when package.json + lockfile exist.
