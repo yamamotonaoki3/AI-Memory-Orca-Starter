@@ -13,6 +13,8 @@ Windows 11 + Orca で開発し、GitHub の **Public** リポジトリ（**MIT L
 - `packages/db/`：Drizzle ORMのスキーマ共有用エントリーポイント。
 - `docs/development/PROJECT_STRUCTURE.md`：責務・配置ルール・起動手順。
 
+今回の分割には[ハーネス共通仕様](https://github.com/ysteam0117/harness)の責務分離を参考にしています。対応状況と未対応ルールは[採用一覧](docs/harness-adoption.md)に記録しました。
+
 `package.json`は当面リポジトリ直下で共通管理します。既存の`npm run dev:api`と`npm run dev:web`は変更せず利用できます。
 
 ## このリポジトリに含まれるもの
