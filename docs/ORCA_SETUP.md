@@ -1,90 +1,66 @@
-# Windows 11 / GitHub Private / Orca セットアップ
+# Windows 11 / GitHub Public（MIT）/ Orca セットアップ
 
-## 1. PC内にファイルを永続保存
+## 1. 現在のリポジトリ
 
-ZIPをダウンロードして展開後、**ZIP内 `AI-Memory-Orca-Starter` の中身**を `C:\Development\AI-Memory` に配置してください。
+- GitHub: https://github.com/yamamotonaoki3/AI-Memory-Orca-Starter
+- ライセンス: MIT（リポジトリ直下の `LICENSE`）
+- 開発ソースはGitHubで管理。実際の会話原本・音声・本番SQLite・秘密情報はWindowsローカルだけで管理する。
+- GitHubに既存リポジトリがあるため、`scripts/publish-private.ps1`を**再実行しない**。
+
+## 2. ローカルPCへ保存（まだcloneしていない場合のみ）
 
 ```powershell
-New-Item -ItemType Directory -Force C:\Development\AI-Memory
-# 展開したAI-Memory-Orca-Starter配下のファイルをこのフォルダに移動/コピー
+New-Item -ItemType Directory -Force C:\Development
+Set-Location C:\Development
+git clone https://github.com/yamamotonaoki3/AI-Memory-Orca-Starter.git AI-Memory
 Set-Location C:\Development\AI-Memory
-Get-ChildItem -Force
 python .\docs\database\sqlite_smoke_test.py
 ```
 
-このチャットからPCのCドライブへ直接書き込んだわけではありません。PCで展開する操作が必要です。
+すでにOrcaから既存Gitリポジトリを使用している場合は、**再clone不要**。Orcaのworktree上で差分を退避・確認してから同期する。
 
-## 2. GitHub CLIを用意
+## 3. リポジトリの公開設定（GitHub管理者が操作）
 
-Gitが入っているか: `git --version`。GitHub CLIは `gh --version` で確認します。
-未導入ならWindowsのwinget等で `GitHub.cli` をインストールし、新しいPowerShellを開いてください。
+GitHubリポジトリの `Settings` → `General` → `Danger Zone` → `Change repository visibility` → `Public` に変更する。
+変更前に、全追跡ファイル、コミット履歴、PR、Actionsログの機密有無を再確認する。
+公開後は誰でも過去のコミットやActionsログを閲覧・複製できる。GitHubとの接続があっても、チャット側から可視性設定を直接変更できるとは限らない。
+
+GitHub CLIを使う場合（`gh auth login`が済んでいるPC）：
 
 ```powershell
-winget install --id GitHub.cli --exact
-# すでにある場合はインストール不要
-gh auth login
-# GitHub.com / HTTPS / ブラウザ認証などを選択
-gh auth status
+gh repo edit yamamotonaoki3/AI-Memory-Orca-Starter --visibility public --accept-visibility-change-consequences
+gh repo view yamamotonaoki3/AI-Memory-Orca-Starter --json visibility --jq .visibility
 ```
 
-**GitHubのトークン・パスワードをChatGPTやリポジトリ内に貼り付けないでください。**
+**注意:** これは取り消し不能な公開コピーを作られ得る操作。原本や秘密情報が過去のコミットに含まれていないことを必ず確認する。
 
-## 3. Privateリポジトリを作成して初回push
+## 4. Orcaでの作業
 
-プロジェクト直下で、用意したスクリプトを内容確認後に実行してください。
+1. Orcaで既存の `C:\Development\AI-Memory`（または実際の保存先）を開く。
+2. ベースブランチは `origin/main`。
+3. 作業ごとに `feature/*` のworktreeを使用する。
+4. コードをGitHubへpushしてPRを作り、CI結果と差分を確認してからmainへマージする。
+5. CIが実行不可ならWindowsローカルで実行できたテストと未実行テストを明示する。
 
-```powershell
-Set-Location C:\Development\AI-Memory
-.\scripts\publish-private.ps1
-```
+## 5. GitHub Actionsと料金
 
-スクリプトは**新規の `AI-Memory` リポジトリ**をGitHub上へPrivateで作成し、初期コミットをpushします。既存の `.git` や `origin` がある場合は誤上書き防止のため停止します。
+- 公開リポジトリの標準GitHub-hostedランナー（`ubuntu-latest`等）は利用無料。
+- larger runnerや他の有料サービスは別途料金があり得る。
+- アカウントの**支払い失敗・請求ロック**が原因なら、公開してもActionsが起動しない可能性がある。Billingを確認する。
+- CIは合成データのみ。個人情報・実原本・本番DB・認証秘密をアップロードしない。
+- 公開PRは第三者から送られる可能性があるので、外部PRのコードを実行するジョブへ秘密情報や書き込み権限を与えない。
 
-Windows PowerShellの実行ポリシーで拒否される場合は、ファイルを確認した上で、そのプロセスだけで実行する方法を利用できます。
+## 6. 開発時の秘密情報保護
 
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\publish-private.ps1
-```
+- `.gitignore`は誤登録防止の補助で、過去のコミットから秘密情報を消す機能はない。
+- `git status` と `git diff --cached --name-only` をpush前に確認する。
+- Windowsの原本保存用ディレクトリとGitリポジトリを分離する。
+- モデル改善の設定オフとGitHub Public/MITは別問題。公開コードの第三者利用をMITで制限しない。
 
-`gh repo create` が未提供・権限不足などで失敗した場合は https://github.com/new で同名の **Private** リポジトリを空で作成し、以下を実行してください（`OWNER`は自分のGitHubログイン名へ変更）。
-
-```powershell
-git remote add origin https://github.com/OWNER/AI-Memory.git
-git push -u origin main
-```
-
-**GitHubの画面でPrivateを必ず確認してください。**
-
-## 4. Orcaで開発
-
-1. Orcaを起動。
-2. `Add Repo` から `C:\Development\AI-Memory` を選択。
-3. 既定のbase refを `origin/main` にする。
-4. `+` でworktreeを作成（例: `feature/m1-original-storage`）。
-5. CodexまたはClaude Codeを選び、`AGENTS.md`・`docs/database/DESIGN.md`を読ませた上で作業を開始。
-6. 差分・テストを確認し、ブランチをコミット・pushしてPRを作成。
-7. PRのGitHub Actionsが通ってからmainへマージ。main上で直接大きなAI変更を進めない。
-
-OrcaはGitのworktreeを利用します。複数のAIセッションで同一の作業ファイルを同時に上書きさせないでください。
-
-## 5. GitHubの費用・情報保護
-
-- Privateリポジトリにする。
-- CIは `.github/workflows/ci.yml` の合成テスト・標準Linuxランナーのみから開始。
-- GitHubのBilling予算と利用状況を確認。
-- ローカルの本物の記憶・原音声・SQLite本番DB・秘密値をGitHubへpushしない。
-- `.gitignore`に加えてpush前に `git status` と `git diff --cached --name-only` を確認する。
-- OrcaやAIエージェントの自動コミット・pushにも同じルールを適用する。
-
-## 6. 今後の通常作業
+## 7. 最初のテスト
 
 ```powershell
-# 作業ブランチの作成・選択はOrcaのworktree操作を優先
-# 変更の確認
-git status
-git diff
-# 合成データによる簡易チェック
 python .\docs\database\sqlite_smoke_test.py
 ```
 
-ローカルの保存はPC側のディスクによるもので、GitHub pushは別操作です。**原本の無期限保存には後続M1/M3のバックアップ実装が必要**です。
+このスモークテストだけでDrizzle・WebAuthn・バックアップ・Windows実機の完成を証明できない。
