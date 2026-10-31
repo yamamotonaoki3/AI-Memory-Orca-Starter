@@ -40,6 +40,10 @@ jobs:
           node-version: "24"
       - name: 依存パッケージの導入（初期検証）
         run: npm install --no-audit --no-fund
+      - name: 本番依存の脆弱性確認
+        run: npm run audit:prod
+      - name: 開発依存を含む脆弱性確認
+        run: npm run audit:all
       - name: TypeScriptとDrizzleの型チェック
         run: npm run typecheck
       - name: Honoの単体テスト
@@ -51,4 +55,5 @@ jobs:
       - name: 空のメモリDBでマイグレーションを検証
         run: npm run db:verify
 # 実データや秘密情報をGitHub Actionsへ送らない。
-# ロックファイルが確定したら、npm installをnpm ciへ切り替える。
+# ロックファイルが確定したらnpm installをnpm ciへ切り替える。
+# 脆弱性を検出した場合はCIを失敗させ、理由をレビューする。
