@@ -1,4 +1,4 @@
-# Local private or sensitive source materials: never commit
+# ローカルの秘密情報・機密資料はGitへコミットしない
 .env
 .env.*
 !.env.example
@@ -18,7 +18,7 @@
 id_rsa*
 id_ed25519*
 
-# Real user originals, audio, databases, staging, backups
+# 実際の原本・音声・データベース・一時保存データ・バックアップを除外する
 /originals/
 /revisions/
 /derived/
@@ -42,7 +42,7 @@ id_ed25519*
 *.caf
 *.mp4
 
-# Dependencies/build/cache
+# 依存パッケージ・ビルド成果物・キャッシュを除外する
 node_modules/
 dist/
 build/
@@ -59,6 +59,6 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-# IDE local configuration
+# エディターや開発環境のローカル設定を除外する
 .vscode/
 .idea/
