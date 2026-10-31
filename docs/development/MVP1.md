@@ -25,7 +25,7 @@ Node.js 24を使用してください。既存のOrcaローカルリポジトリ
 ```powershell
 git switch main
 git pull --ff-only origin main
-npm install
+npm ci
 npm run typecheck
 npm test
 npm run build:web
@@ -58,5 +58,5 @@ APIは`http://127.0.0.1:8787/api/health`で応答します。
 - WebAuthn認証、原本保存、API認可、機密検査、検索、バックアップは未実装です。
 - Web画面は開発用の接続確認だけであり、会話本文を受け付けません。
 - 本番SQLite、会話原本、音声、秘密情報はGitHubへ登録しません。
-- 今回のPRは依存関係のロックファイルをまだ含んでいません。CIで依存解決を検証した後、`package-lock.json`をコミットし、`npm ci`に切り替える必要があります。
+- `package-lock.json`をGitで管理し、CIは`npm ci`を実行します。依存更新時は`npm install`でロックファイルを更新し、変更内容と`npm audit`を確認してください。
 - 合成データだけでテストしてください。
