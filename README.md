@@ -19,7 +19,8 @@ Windows 11 + Orca で開発し、GitHub の **Public** リポジトリ（**MIT L
 
 ## このリポジトリに含まれるもの
 
-- `docs/database/`: 前回作成したM1 DB設計ファイル8点をそのまま収録（設計書、ER図、Drizzle案、SQL、スモークテスト）。
+- `docs/database/`：M1 DB設計書、ER図、Drizzle案、検索・保護用カスタムSQL、スモークテスト。
+- `migrations/`：初期27テーブルのDrizzle SQLと`meta/`履歴。CIでスキーマとの差分を検査。
 - `docs/requirements/`: v8.8が正式な要件ベースラインであることと、実装時の注意事項。
 - `docs/ORCA_SETUP.md`: Windows 11 / GitHub / Orcaセットアップ手順。
 - `AGENTS.md`: OrcaのCodex・Claude Code向けリポジトリ共通指示。
@@ -53,7 +54,7 @@ python .\docs\database\sqlite_smoke_test.py
 
 ## 現時点の注意
 
-- `docs/database/schema.ts` は**検証前のDrizzle設計案**であり、直ちにデータベース生成できると保証していません。
+- `docs/database/schema.ts`の型チェックと初期マイグレーションの空DB適用はCIで成功しています。ただし本番DB・Windows実機の移行安全性は未検証です。
 - `docs/database/drizzle.config.ts` は開発用例です。起動時の自動マイグレーションや本番DBでの `drizzle-kit push` を禁止します。
 - v8.8条件定義書の詳細全文は**このチャットで確定済みの文書が正本**です。現在は概要・参照のみで、全文の機械的な書き出しを保証していません。GitHub公開用に個人情報等を確認した正式全文を`docs/requirements/`に版固定して保存してください。
 

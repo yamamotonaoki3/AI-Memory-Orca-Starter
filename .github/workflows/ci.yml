@@ -52,8 +52,17 @@ jobs:
         run: npm run build:web
       - name: DrizzleマイグレーションSQLの生成
         run: npm run db:generate
+      - name: コミット済みマイグレーションとスキーマの差分を確認
+        shell: bash
+        run: |
+          if [ -n "$(git status --porcelain --untracked-files=all -- migrations/)" ]; then
+            git status --short --untracked-files=all -- migrations/
+            echo "::error::Drizzleスキーマに対応するマイグレーションがGitに反映されていません。"
+            exit 1
+          fi
       - name: 空のメモリDBでマイグレーションを検証
         run: npm run db:verify
 # 実データや秘密情報をGitHub Actionsへ送らない。
 # package-lock.jsonの内容を使用し、依存ライブラリの変更を検出する。
 # 脆弱性を検出した場合はCIを失敗させ、理由をレビューする。
+# migrations/の初期SQL・metaを版管理し、スキーマとの差分を検出する。
