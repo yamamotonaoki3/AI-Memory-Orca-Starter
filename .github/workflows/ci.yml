@@ -64,3 +64,40 @@ jobs:
 # 実データや秘密情報をGitHub Actionsへ送らない。
 # package-lock.jsonの内容を使用し、依存ライブラリの変更を検出する。
 # 脆弱性を検出した場合はCIを失敗させ、理由をレビューする。
+
+  migration-bootstrap:
+    # 一回限りの初期SQL固定。外部PRやmainでは絶対に実行しない。
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.number == 8 && github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'chore/m1-migration-baseline' }}
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 特定ブランチのコードを取得（認証情報を保持しない）
+        uses: actions/checkout@v4
+        with:
+          ref: chore/m1-migration-baseline
+          persist-credentials: false
+      - name: Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: 固定済み依存パッケージをインストール
+        run: npm ci --no-audit --no-fund
+      - name: 初期マイグレーションを生成
+        run: npm run db:generate
+      - name: 作業ブランチだけに生成結果をコミット
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -z "$(git status --porcelain --untracked-files=all -- migrations/)" ]; then
+            echo "初期マイグレーションは既に登録されています。"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add migrations/
+          git diff --cached --check
+          git commit -m "chore: Drizzle初期マイグレーションを版管理"
+          AUTH="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          git -c "http.extraheader=AUTHORIZATION: basic $AUTH" push origin HEAD:refs/heads/chore/m1-migration-baseline
