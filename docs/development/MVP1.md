@@ -9,7 +9,7 @@
 - `worker/`：独立Workerの起動口（ジョブ処理は未実装）。
 - `packages/db/`：Drizzle ORMスキーマの参照口。
 - `docs/database/schema.ts`：27テーブルの検証前スキーマ案。
-- `scripts/verify-migrations.mjs`：生成SQLを空のメモリDBに適用して整合性を検証。
+- `scripts/verify-migrations.mjs`：Gitで管理する初期SQLと追加のFTS5/保護トリガーを、空のメモリDBに適用して整合性を検証。
 
 ## ディレクトリ分離
 
@@ -49,9 +49,9 @@ APIは`http://127.0.0.1:8787/api/health`で応答します。
 
 ## DBマイグレーションの制限
 
-`npm run db:generate`はマイグレーションSQLを生成するだけで、実際のデータベースへ適用しません。
+`migrations/`にはDrizzleの初期SQLと`meta/`スナップショットを版管理しています。`npm run db:generate`は変更があれば次のSQLを生成するだけで、実際のデータベースへ適用しません。
 `npm run db:verify`は空の**メモリDB**でSQLとFTS5・保護トリガーの整合性を検証します。
-本番DBへの自動適用や`drizzle-kit push`は禁止します。生成したSQLとスナップショットはレビュー後にGitへ登録してください。
+CIでは`db:generate`実行後に`migrations/`のGit差分を検査し、未登録の変更があれば失敗させます。FTS5と保護トリガーはまだカスタムSQLとして別管理です。本番DBへの自動適用や`drizzle-kit push`は禁止します。
 
 ## 未実装と残課題
 
