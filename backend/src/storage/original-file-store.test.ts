@@ -42,7 +42,7 @@ describe("不変原本の保存基盤", () => {
     store = new OriginalFileStore(root);
     await expect(store.promote(VERSION_ID)).resolves.toEqual(receipt);
     expect(await store.inspect(VERSION_ID)).toBe("FILE_READY");
-    await expect(store.verifyCommitted(VERSION_ID)).resolves.toBeUndefined();
+    await expect(store.verifyFinal(VERSION_ID)).resolves.toBeUndefined();
     const result = await readFile(path.join(root, ...receipt.storageRelPath.split("/")));
     expect(result).toEqual(bytes);
     await expect(store.promote(VERSION_ID)).resolves.toEqual(receipt);
@@ -71,7 +71,7 @@ describe("不変原本の保存基盤", () => {
     await expect(store.promote(VERSION_ID)).rejects.toThrow();
     expect(await store.inspect(VERSION_ID)).toBe("RECOVERY_REQUIRED");
     expect(await store.listJournalIds()).toContain(VERSION_ID);
-    await expect(store.verifyCommitted(VERSION_ID)).rejects.toThrow("見つかりません");
+    await expect(store.verifyFinal(VERSION_ID)).rejects.toThrow("見つかりません");
   });
 
   it("確定後に原本が改変された場合も検出する", async () => {
@@ -81,7 +81,7 @@ describe("不変原本の保存基盤", () => {
     });
     const receipt = await store.promote(VERSION_ID);
     await writeFile(path.join(root, ...receipt.storageRelPath.split("/")), "原本が改変された");
-    await expect(store.verifyCommitted(VERSION_ID)).rejects.toThrow();
+    await expect(store.verifyFinal(VERSION_ID)).rejects.toThrow();
     expect(await store.inspect(VERSION_ID)).toBe("RECOVERY_REQUIRED");
   });
 
