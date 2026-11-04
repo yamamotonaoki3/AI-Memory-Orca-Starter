@@ -54,6 +54,13 @@ jobs:
         run: npm run db:generate
       - name: 空のメモリDBでマイグレーションを検証
         run: npm run db:verify
+      - name: 生成SQLとスナップショットをレビュー用に保存
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-drizzle-generated
+          path: migrations/
+          if-no-files-found: error
+          retention-days: 1
 # 実データや秘密情報をGitHub Actionsへ送らない。
 # package-lock.jsonの内容を使用し、依存ライブラリの変更を検出する。
 # 脆弱性を検出した場合はCIを失敗させ、理由をレビューする。
