@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { lstat, link, mkdir, open, readFile, realpath, readdir } from "node:fs/promises";
+import { lstat, link, mkdir, open, readFile, realpath, readdir, unlink } from "node:fs/promises";
 import path from "node:path";
 
 // M1の直接テキスト用の暫定上限。サイズ上限の変更は要件レビュー後に行う。
@@ -217,7 +217,12 @@ export class OriginalFileStore {
       }
       await this.validateFile(destination, receipt);
     }
-    // ファイルは検証済み。DBとの確定連携が完了するまではステージングを保持する。
+    // 正式原本の検証後、一時ファイル名だけを消す。ジャーナルと正式原本は残す。
+    // 停止・例外時にはジャーナルから再実行できる。原本は上書きしない。
+    if (!await isFileMissing(stage)) {
+      await this.validateFile(stage, receipt);
+      await unlink(stage);
+    }
     return receipt;
   }
 
@@ -246,7 +251,7 @@ export class OriginalFileStore {
     return entries.map((entry) => entry.slice(0, -5)).sort();
   }
 
-  async verifyCommitted(originalVersionId: string): Promise<void> {
+  async verifyFinal(originalVersionId: string): Promise<void> {
     const receipt = await this.loadReceipt(originalVersionId);
     const found = await this.validateFile(this.originalFile(receipt), receipt);
     if (!found) throw new Error("確定済み原本が見つかりません。復旧確認が必要です。");
