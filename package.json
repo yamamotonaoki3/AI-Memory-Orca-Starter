@@ -19,9 +19,9 @@
     "audit:all": "npm audit --audit-level=moderate"
   },
   "dependencies": {
-    "@hono/node-server": "2.1.5",
+    "@hono/node-server": "2.1.9",
     "drizzle-orm": "0.45.4",
-    "hono": "4.13.14",
+    "hono": "4.13.19",
     "react": "19.3.1",
     "react-dom": "19.3.1"
   },
