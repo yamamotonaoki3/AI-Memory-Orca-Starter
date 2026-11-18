@@ -166,19 +166,23 @@ export class OriginalFileStore {
   }
 
   async stage(input: NewOriginal): Promise<OriginalReceipt> {
-    assertUuid(input.recordId);
-    assertUuid(input.originalVersionId);
-    assertBytes(input.bytes);
+    const { recordId, originalVersionId, createdAtMs, bytes: inputBytes } = input;
+    assertUuid(recordId);
+    assertUuid(originalVersionId);
+    // コピー前に上限を検証し、非同期処理中は呼出元と保存用の領域を共有しない。
+    assertBytes(inputBytes);
+    const bytes = new Uint8Array(inputBytes);
+    assertBytes(bytes);
     const receipt: OriginalReceipt = {
-      recordId: input.recordId,
-      originalVersionId: input.originalVersionId,
-      createdAtMs: input.createdAtMs,
-      storageRelPath: relPath(input.originalVersionId, input.createdAtMs),
-      sha256: checksum(input.bytes),
-      byteLength: input.bytes.byteLength,
+      recordId,
+      originalVersionId,
+      createdAtMs,
+      storageRelPath: relPath(originalVersionId, createdAtMs),
+      sha256: checksum(bytes),
+      byteLength: bytes.byteLength,
     };
-    const journal = this.journalFile(input.originalVersionId);
-    const stage = this.stagingFile(input.originalVersionId);
+    const journal = this.journalFile(originalVersionId);
+    const stage = this.stagingFile(originalVersionId);
     await this.ensureDirectory(path.dirname(journal));
     await this.ensureDirectory(path.dirname(stage));
     // ジャーナルを先に不変ファイルとして確定。途中停止時は後続の検査で不足を検知する。
@@ -191,7 +195,7 @@ export class OriginalFileStore {
     }
     const file = await open(stage, "wx", 0o600);
     try {
-      await file.writeFile(input.bytes);
+      await file.writeFile(bytes);
       await file.sync();
     } finally {
       await file.close();
@@ -257,3 +261,4 @@ export class OriginalFileStore {
     if (!found) throw new Error("確定済み原本が見つかりません。復旧確認が必要です。");
   }
 }
+

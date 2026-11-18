@@ -109,4 +109,47 @@ describe("不変原本の保存基盤", () => {
     await writeFile(journal, JSON.stringify(data));
     await expect(store.promote(VERSION_ID)).rejects.toThrow("ジャーナル");
   });
+
+  it.each(["Buffer", "Uint8Array"] as const)(
+    "%sの呼出元が保存中に領域を再利用しても受付時の原本を保持する",
+    async (kind) => {
+      const bytes = kind === "Buffer"
+        ? Buffer.from(SAMPLE_TEXT, "utf8")
+        : new Uint8Array(Buffer.from(SAMPLE_TEXT, "utf8"));
+      const pending = store.stage({
+        recordId: RECORD_ID, originalVersionId: VERSION_ID,
+        bytes, createdAtMs: NOW,
+      });
+      // 呼出元の領域は保存処理とは独立して再利用できる。
+      bytes.fill(0);
+      const receipt = await pending;
+      expect(await readFile(path.join(root, "runtime", "staging", VERSION_ID + ".part"), "utf8"))
+        .toBe(SAMPLE_TEXT);
+      await expect(store.promote(VERSION_ID)).resolves.toEqual(receipt);
+      await expect(store.verifyFinal(VERSION_ID)).resolves.toBeUndefined();
+    },
+  );
+
+  it("呼出元が入力オブジェクトを再利用しても受付時の本文と識別情報を保存する", async () => {
+    const input = {
+      recordId: RECORD_ID, originalVersionId: VERSION_ID,
+      bytes: Buffer.from(SAMPLE_TEXT, "utf8"), createdAtMs: NOW,
+    };
+    const pending = store.stage(input);
+    input.bytes = Buffer.from("別の合成入力", "utf8");
+    input.recordId = randomUUID();
+    input.originalVersionId = randomUUID();
+    input.createdAtMs = NOW + 86400000;
+    const receipt = await pending;
+    expect(receipt).toMatchObject({
+      recordId: RECORD_ID, originalVersionId: VERSION_ID, createdAtMs: NOW,
+    });
+    expect(await readFile(path.join(root, "runtime", "staging", VERSION_ID + ".part"), "utf8"))
+      .toBe(SAMPLE_TEXT);
+    await expect(store.promote(VERSION_ID)).resolves.toEqual(receipt);
+    await expect(store.verifyFinal(VERSION_ID)).resolves.toBeUndefined();
+    expect(await store.listJournalIds()).toEqual([VERSION_ID]);
+  });
+
 });
+
