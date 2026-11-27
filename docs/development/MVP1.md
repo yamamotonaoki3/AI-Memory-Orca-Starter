@@ -8,7 +8,7 @@
 - `frontend/`：Vite + Reactの開発用画面（状態表示のみ）。CSSは`frontend/src/styles/`へ分離。
 - `worker/`：独立Workerの起動口（ジョブ処理は未実装）。
 - `packages/db/`：Drizzle ORMスキーマの参照口。
-- `docs/database/schema.ts`：27テーブルの検証前スキーマ案。
+- `docs/database/schema.ts`：27テーブルのスキーマ案。型チェックと初期SQLの空のメモリDBへの適用は検証済みですが、本番運用と正式要件との照合は未確認です。
 - `scripts/verify-migrations.mjs`：Gitで管理する初期SQLと追加のFTS5/保護トリガーを、空のメモリDBに適用して整合性を検証。
 
 ## ディレクトリ分離
@@ -55,7 +55,9 @@ CIでは`db:generate`実行後に`migrations/`のGit差分を検査し、未登�
 
 ## 未実装と残課題
 
-- WebAuthn認証、原本保存、API認可、機密検査、検索、バックアップは未実装です。
+- 原本ファイル保存部品の`OriginalFileStore`は実装済みです。ステージング、本文を含まないジャーナル、SHA-256・サイズの検証、既存原本を上書きしない配置、再起動後の状態判定を行います。詳細と制限は[原本ファイル保存層](ORIGINAL_FILE_STORE.md)を参照してください。
+- SQLiteとファイルの二段階確定、DBとファイルの再照合、自動復旧を含む保存・復旧サービス全体は未実装です。保存部品は外部ユーザー向けAPIには接続していません。
+- WebAuthn認証、API認可、機密検査、検索、バックアップは未実装です。
 - Web画面は開発用の接続確認だけであり、会話本文を受け付けません。
 - 本番SQLite、会話原本、音声、秘密情報はGitHubへ登録しません。
 - `package-lock.json`をGitで管理し、CIは`npm ci`を実行します。依存更新時は`npm install`でロックファイルを更新し、変更内容と`npm audit`を確認してください。
